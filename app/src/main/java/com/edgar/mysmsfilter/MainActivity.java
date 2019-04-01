@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
                     finalKeywords.clear();
                     finalKeywords.addAll(Arrays.asList(defaultKeywords));
                     btnViewAll.performClick();
+                    btnSave.performClick();
                     break;
 
                 case R.id.btn_save:
@@ -75,6 +76,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        boolean isFromReboot = getIntent().getBooleanExtra("FROM_REBOOT", false);
+        if (isFromReboot) {
+            Toast.makeText(this, "Sms is rebooted!", Toast.LENGTH_SHORT).show();
+        }
 
         btnAddConfirm = findViewById(R.id.btn_add_confirm);
         btnViewAll = findViewById(R.id.btn_view_all);
