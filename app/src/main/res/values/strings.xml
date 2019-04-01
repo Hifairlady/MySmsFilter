@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">MySmsFilter</string>
+    <string name="waiting_for_sms">Waiting for sms!</string>
 </resources>
