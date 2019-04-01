@@ -24,12 +24,13 @@ public class MainActivity extends AppCompatActivity {
     private ContentObserver mObserver;
     private Button btnAddConfirm;
     private Button btnViewAll;
-    private final ArrayList<String> finalKeywords = new ArrayList<>();
     private Button btnReset;
+    private final ArrayList<String> finalKeywords = new ArrayList<>();
     private EditText etInputWord;
     private TextView tvShowAll;
-    private String defaultKeywords[] = {"服务厅"};
     private Button btnSave;
+    //小米金融, 还款, 借, 贷, 钱, 信用, 征信, 征收, 欠, 债, 快易花, 360借条, 钱包, 贷款, 人民币, RMB, rmb, 小花, 催缴
+    private String defaultKeywords[] = {"小米金融", "还款", "借", "贷", "钱", "信用", "征信", "征收", "欠", "债", "快易花", "360借条", "钱包", "贷款", "人民币", "RMB", "rmb", "小花", "催缴"};
     private View.OnClickListener mOnClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -39,9 +40,10 @@ public class MainActivity extends AppCompatActivity {
                     if (inputWord.length() > 0) {
                         finalKeywords.add(etInputWord.getText().toString());
                         etInputWord.setText("");
-                        Toast.makeText(MainActivity.this, "Text added: " + inputWord,
+                        Toast.makeText(MainActivity.this, "Word added: " + inputWord,
                                 Toast.LENGTH_SHORT).show();
                     }
+                    btnViewAll.performClick();
                     break;
 
                 case R.id.btn_view_all:
@@ -55,10 +57,12 @@ public class MainActivity extends AppCompatActivity {
                 case R.id.btn_reset:
                     finalKeywords.clear();
                     finalKeywords.addAll(Arrays.asList(defaultKeywords));
+                    btnViewAll.performClick();
                     break;
 
                 case R.id.btn_save:
-                    saveWords(getApplicationContext(), finalKeywords);
+                    saveWords(MainActivity.this, finalKeywords);
+                    btnViewAll.performClick();
                     break;
 
                 default:
@@ -98,9 +102,9 @@ public class MainActivity extends AppCompatActivity {
                 long msgDate = 0;
                 String msgBody;
                 if (cursor.getCount() > 0 && cursor.moveToFirst()) {
-                    msgId = cursor.getLong(0);
-                    msgDate = cursor.getLong(1);
-                    msgBody = cursor.getString(2);
+                    msgId = cursor.getLong(cursor.getColumnIndex("_id"));
+                    msgDate = cursor.getLong(cursor.getColumnIndex("date"));
+                    msgBody = cursor.getString(cursor.getColumnIndex("body"));
 
                     int delCount = 0;
                     for (String word : finalKeywords) {
@@ -110,9 +114,9 @@ public class MainActivity extends AppCompatActivity {
                             break;
                         }
                     }
-                    if (delCount == 1) {
-                        Toast.makeText(MainActivity.this, "Message deleted!", Toast.LENGTH_SHORT).show();
-                    }
+//                    if (delCount == 1) {
+//                        Toast.makeText(MainActivity.this, "Message deleted!", Toast.LENGTH_SHORT).show();
+//                    }
                 }
                 cursor.close();
             }
@@ -125,15 +129,22 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        ArrayList<String> temp = getWords(getApplicationContext());
+        ArrayList<String> temp = getWords(this);
         finalKeywords.clear();
         if (temp == null) {
             finalKeywords.addAll(Arrays.asList(defaultKeywords));
-            Toast.makeText(this, "Empty SharedPreference!", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(this, "Empty SharedPreference!", Toast.LENGTH_SHORT).show();
         } else {
-            Toast.makeText(this, "Non empty SharedPreference!", Toast.LENGTH_SHORT).show();
+//            Toast.makeText(this, "Non empty SharedPreference!", Toast.LENGTH_SHORT).show();
             finalKeywords.addAll(temp);
         }
+        btnViewAll.performClick();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        deleteAllBadMsgs(this);
     }
 
     private void saveWords(Context context, ArrayList<String> wordsList) {
@@ -162,6 +173,41 @@ public class MainActivity extends AppCompatActivity {
             result.add(i, sharedPreferences.getString(key, "ERROR_EMPTY_WORD"));
         }
         return result;
+    }
+
+    private void deleteAllBadMsgs(Context context) {
+        ContentResolver resolver = context.getContentResolver();
+        Cursor cursor = resolver.query(Uri.parse("content://sms"),
+                new String[]{"_id", "date", "body"}, null, null,
+                "date desc");
+        if (cursor == null) return;
+        long msgId;
+        long msgDate = 0;
+        String msgBody;
+        if (cursor.getCount() > 0 && cursor.moveToFirst()) {
+            int index_id = cursor.getColumnIndex("_id");
+            int index_date = cursor.getColumnIndex("date");
+            int index_body = cursor.getColumnIndex("body");
+
+            int delCount = 0;
+
+            do {
+                msgId = cursor.getLong(index_id);
+                msgDate = cursor.getLong(index_date);
+                msgBody = cursor.getString(index_body);
+                for (String word : finalKeywords) {
+                    if (msgBody.contains(word)) {
+                        delCount += resolver.delete(Telephony.Sms.CONTENT_URI,
+                                "_id=" + msgId, null);
+                    }
+                }
+            } while (cursor.moveToNext());
+//            if (delCount > 0) {
+//                Toast.makeText(context, String.valueOf(delCount) +
+//                        " Messages deleted!", Toast.LENGTH_SHORT).show();
+//            }
+        }
+        cursor.close();
     }
 
 }
