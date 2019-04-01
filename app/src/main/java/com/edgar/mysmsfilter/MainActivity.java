@@ -8,20 +8,42 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Telephony;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
     private ContentObserver mObserver;
-    private TextView tvBody;
+    private Button btnAddConfirm;
+    private String defaultKeywords[] = {"服务厅"};
+    private ArrayList<String> finalKeywords = new ArrayList<>();
+    private View.OnClickListener mOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            switch (v.getId()) {
+                case R.id.btn_add_confirm:
+                    break;
+
+                case R.id.btn_view_all:
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        tvBody = findViewById(R.id.tv_msg_body);
+        finalKeywords.addAll(Arrays.asList(defaultKeywords));
+        btnAddConfirm = findViewById(R.id.btn_add_confirm);
 
         mObserver = new ContentObserver(new Handler()) {
             @Override
@@ -41,18 +63,17 @@ public class MainActivity extends AppCompatActivity {
                     msgDate = cursor.getLong(1);
                     msgBody = cursor.getString(2);
 
-                    tvBody.setText(msgBody);
-
-                    if (msgBody.contains("服务厅")) {
-                        int delCount = resolver.delete(Telephony.Sms.CONTENT_URI,
-                                "_id=" + msgId, null);
-                        if (delCount == 1) {
-                            Toast.makeText(MainActivity.this, "Message delete!",
-                                    Toast.LENGTH_SHORT).show();
+                    int delCount = 0;
+                    for (String word : finalKeywords) {
+                        if (msgBody.contains(word)) {
+                            delCount = resolver.delete(Telephony.Sms.CONTENT_URI,
+                                    "_id=" + msgId, null);
+                            break;
                         }
                     }
-
-
+                    if (delCount == 1) {
+                        Toast.makeText(MainActivity.this, "Message deleted!", Toast.LENGTH_SHORT).show();
+                    }
                 }
                 cursor.close();
             }
