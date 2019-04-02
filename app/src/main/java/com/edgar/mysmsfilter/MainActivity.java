@@ -12,7 +12,9 @@ import android.provider.Telephony;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,9 +25,9 @@ public class MainActivity extends AppCompatActivity {
 
     private ContentObserver mObserver;
     private Button btnAddConfirm;
-    private Button btnViewAll;
     private Button btnReset;
-    private final ArrayList<String> finalKeywords = new ArrayList<>();
+    private final ArrayList<String> mKeywordsList = new ArrayList<>();
+    private Switch swViewAll;
     private EditText etInputWord;
     private TextView tvShowAll;
     private Button btnSave;
@@ -38,32 +40,43 @@ public class MainActivity extends AppCompatActivity {
                 case R.id.btn_add_confirm:
                     String inputWord = etInputWord.getText().toString();
                     if (inputWord.length() > 0) {
-                        finalKeywords.add(etInputWord.getText().toString());
+                        mKeywordsList.add(etInputWord.getText().toString());
                         etInputWord.setText("");
                         Toast.makeText(MainActivity.this, "Word added: " + inputWord,
                                 Toast.LENGTH_SHORT).show();
                     }
-                    btnViewAll.performClick();
-                    break;
-
-                case R.id.btn_view_all:
-                    String outputWords = "";
-                    for (String str : finalKeywords) {
-                        outputWords = outputWords.concat(str + ", ");
-                    }
-                    tvShowAll.setText(outputWords);
+                    showAllWords(tvShowAll, mKeywordsList);
                     break;
 
                 case R.id.btn_reset:
-                    finalKeywords.clear();
-                    finalKeywords.addAll(Arrays.asList(defaultKeywords));
-                    btnViewAll.performClick();
+                    mKeywordsList.clear();
+                    mKeywordsList.addAll(Arrays.asList(defaultKeywords));
+                    showAllWords(tvShowAll, mKeywordsList);
                     btnSave.performClick();
                     break;
 
                 case R.id.btn_save:
-                    saveWords(MainActivity.this, finalKeywords);
-                    btnViewAll.performClick();
+                    saveWords(MainActivity.this, mKeywordsList);
+                    showAllWords(tvShowAll, mKeywordsList);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    };
+
+    private CompoundButton.OnCheckedChangeListener mOnCheckListener = new CompoundButton.OnCheckedChangeListener() {
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+            switch (buttonView.getId()) {
+                case R.id.sw_view_all:
+                    if (isChecked) {
+                        tvShowAll.setVisibility(View.VISIBLE);
+                        showAllWords(tvShowAll, mKeywordsList);
+                    } else {
+                        tvShowAll.setVisibility(View.INVISIBLE);
+                    }
                     break;
 
                 default:
@@ -83,16 +96,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         btnAddConfirm = findViewById(R.id.btn_add_confirm);
-        btnViewAll = findViewById(R.id.btn_view_all);
         btnSave = findViewById(R.id.btn_save);
         btnReset = findViewById(R.id.btn_reset);
+        swViewAll = findViewById(R.id.sw_view_all);
         etInputWord = findViewById(R.id.et_enter_words);
         tvShowAll = findViewById(R.id.tv_show_all);
 
         btnAddConfirm.setOnClickListener(mOnClickListener);
-        btnViewAll.setOnClickListener(mOnClickListener);
         btnReset.setOnClickListener(mOnClickListener);
         btnSave.setOnClickListener(mOnClickListener);
+        swViewAll.setOnCheckedChangeListener(mOnCheckListener);
 
         mObserver = new ContentObserver(new Handler()) {
             @Override
@@ -113,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
                     msgBody = cursor.getString(cursor.getColumnIndex("body"));
 
                     int delCount = 0;
-                    for (String word : finalKeywords) {
+                    for (String word : mKeywordsList) {
                         if (msgBody.contains(word)) {
                             delCount = resolver.delete(Telephony.Sms.CONTENT_URI,
                                     "_id=" + msgId, null);
@@ -136,15 +149,16 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
 
         ArrayList<String> temp = getWords(this);
-        finalKeywords.clear();
+        mKeywordsList.clear();
         if (temp == null) {
-            finalKeywords.addAll(Arrays.asList(defaultKeywords));
+            mKeywordsList.addAll(Arrays.asList(defaultKeywords));
 //            Toast.makeText(this, "Empty SharedPreference!", Toast.LENGTH_SHORT).show();
         } else {
 //            Toast.makeText(this, "Non empty SharedPreference!", Toast.LENGTH_SHORT).show();
-            finalKeywords.addAll(temp);
+            mKeywordsList.addAll(temp);
         }
-        btnViewAll.performClick();
+        swViewAll.setChecked(false);
+        showAllWords(tvShowAll, mKeywordsList);
     }
 
     @Override
@@ -201,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
                 msgId = cursor.getLong(index_id);
                 msgDate = cursor.getLong(index_date);
                 msgBody = cursor.getString(index_body);
-                for (String word : finalKeywords) {
+                for (String word : mKeywordsList) {
                     if (msgBody.contains(word)) {
                         delCount += resolver.delete(Telephony.Sms.CONTENT_URI,
                                 "_id=" + msgId, null);
@@ -214,6 +228,15 @@ public class MainActivity extends AppCompatActivity {
 //            }
         }
         cursor.close();
+    }
+
+    private void showAllWords(TextView textView, ArrayList<String> keyWords) {
+        if (textView == null || keyWords.size() == 0) return;
+        String outputWords = "";
+        for (String str : keyWords) {
+            outputWords = outputWords.concat(str + ", ");
+        }
+        textView.setText(outputWords);
     }
 
 }

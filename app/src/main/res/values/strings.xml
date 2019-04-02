@@ -2,9 +2,10 @@
     <string name="app_name">MySmsFilter</string>
     <string name="waiting_for_sms">Waiting for sms!</string>
     <string name="STRING_ADD_CONFIRM">Add Word</string>
-    <string name="add_new_keyword_here">Add new keyword here</string>
-    <string name="view_all">View All</string>
+    <string name="add_new_keyword_here">Add a new keyword here</string>
     <string name="show_all_keywords_here">Show all keywords here</string>
     <string name="reset_words">Reset Words</string>
     <string name="save">Save</string>
+    <string name="view_all">View All</string>
+    <string name="STRING_TIPS_TEXTVIEW">Tips: SMS Permission, Self-starting, Battery behavior</string>
 </resources>
