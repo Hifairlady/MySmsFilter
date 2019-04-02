@@ -236,6 +236,7 @@ public class MainActivity extends AppCompatActivity {
         for (String str : keyWords) {
             outputWords = outputWords.concat(str + ", ");
         }
+        outputWords = outputWords.substring(0, outputWords.length() - 2);
         textView.setText(outputWords);
     }
 
